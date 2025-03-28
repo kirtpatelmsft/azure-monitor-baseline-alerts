@@ -11,7 +11,7 @@
     },
     "alertDescription": {
       "type": "string",
-      "defaultValue": "Total data usage reported at 5 minutes granularity",
+      "defaultValue": "Throttled requests for Cosmos DB request rate too large (429) exceptions. Most workloads can tolerate 1-5% of throttled requests.",
       "metadata": {
         "description": "Description of alert"
       }
@@ -45,7 +45,7 @@
     },
     "alertSeverity": {
       "type": "int",
-      "defaultValue": 3,
+      "defaultValue": 2,
       "allowedValues": [
         0,
         1,
@@ -61,43 +61,26 @@
       "type": "string",
       "defaultValue": "GreaterThan",
       "allowedValues": [
+        "Equals",
         "GreaterThan",
+        "GreaterThanOrEqual",
         "LessThan",
-        "GreaterOrLessThan"
+        "LessThanOrEqual"
       ],
       "metadata": {
         "description": "Operator comparing the current value with the threshold value."
       }
     },
-    "alertSensitivity": {
+    "threshold": {
       "type": "string",
-      "defaultValue": "Low",
-      "allowedValues": [
-        "High",
-        "Medium",
-        "Low"
-      ],
+      "defaultValue": "50",
       "metadata": {
-        "description": "Tunes how 'noisy' the Dynamic Thresholds alerts will be: 'High' will result in more alerts while 'Low' will result in fewer alerts."
-      }
-    },
-    "numberOfEvaluationPeriods": {
-      "type": "int",
-      "defaultValue": 4,
-      "metadata": {
-        "description": "The number of periods to check in the alert evaluation."
-      }
-    },
-    "minFailingPeriodsToAlert": {
-      "type": "int",
-      "defaultValue": 4,
-      "metadata": {
-        "description": "The number of unhealthy periods to alert on (must be lower or equal to numberOfEvaluationPeriods)."
+        "description": "The threshold value at which the alert is activated."
       }
     },
     "timeAggregation": {
       "type": "string",
-      "defaultValue": "Average",
+      "defaultValue": "Count",
       "allowedValues": [
         "Average",
         "Minimum",
@@ -111,20 +94,24 @@
     },
     "windowSize": {
       "type": "string",
-      "defaultValue": "PT1M",
+      "defaultValue": "PT5M",
       "allowedValues": [
+        "PT1M",
         "PT5M",
         "PT15M",
         "PT30M",
-        "PT1H"
+        "PT1H",
+        "PT6H",
+        "PT12H",
+        "P1D"
       ],
       "metadata": {
-        "description": "Period of time used to monitor alert activity based on the threshold. Must be between five minutes and one hour. ISO 8601 duration format."
+        "description": "Period of time used to monitor alert activity based on the threshold. Must be between one minute and one day. ISO 8601 duration format."
       }
     },
     "evaluationFrequency": {
       "type": "string",
-      "defaultValue": "PT15M",
+      "defaultValue": "PT1M",
       "allowedValues": [
         "PT1M",
         "PT5M",
@@ -181,17 +168,13 @@
           "odata.type": "Microsoft.Azure.Monitor.MultipleResourceMultipleMetricCriteria",
           "allOf": [
             {
-              "criterionType": "DynamicThresholdCriterion",
               "name": "1st criterion",
-              "metricName": "DataUsage",
-              "dimensions": [],
+              "metricName": "ThrottledRequests",
+              "dimensions": [{"operator": "include", "name": "statuscode", "values": ["429"]}],
               "operator": "[parameters('operator')]",
-              "alertSensitivity": "[parameters('alertSensitivity')]",
-              "failingPeriods": {
-                "numberOfEvaluationPeriods": "[parameters('numberOfEvaluationPeriods')]",
-                "minFailingPeriodsToAlert": "[parameters('minFailingPeriodsToAlert')]"
-              },
-              "timeAggregation": "[parameters('timeAggregation')]"
+              "threshold": "[parameters('threshold')]",
+              "timeAggregation": "[parameters('timeAggregation')]",
+              "criterionType": "StaticThresholdCriterion"
             }
           ]
         }
